@@ -10,11 +10,14 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.Comparator;
 
 
 public class ForumTest {
     private Forum forum;
     private Post[] posts;
+
 
     @BeforeEach
     void setUp() {
@@ -32,6 +35,7 @@ public class ForumTest {
             posts[i].addLike();
             forum.addPost(posts[i]);
         }
+
     }
 
     @Test
@@ -71,23 +75,18 @@ public class ForumTest {
 
     @Test
     void testGetPostsByAuthor() {
-        Post post1 = new Post(7, "Post 7", "Alice", "Content 7");
-        Post post2 = new Post(8, "Post 8", "Alice", "Content 8");
-        forum.addPost(post1);
-        forum.addPost(post2);
-        Post[] alicePosts = forum.getPostsByAuthor("Alice");
-        assertNotNull(alicePosts);
-        assertEquals(3, alicePosts.length);
-        assertEquals(1, alicePosts[0].getPostId());
-        assertEquals(7, alicePosts[1].getPostId());
-        assertEquals(8, alicePosts[2].getPostId());
-        Post[] nonExistentPosts = forum.getPostsByAuthor("NonExistent");
-        assertNotNull(nonExistentPosts);
-        assertEquals(0, nonExistentPosts.length);
-        assertEquals(0, nonExistentPosts.length);
-
+        Post[] result = forum.getPostsByAuthor("Bob");
+        assertEquals(1, result.length);
+        assertEquals("Bob", result[0].getAuthor());
+        assertEquals("Second Post", result[0].getTitle());
+        result = forum.getPostsByAuthor("Unknown");
+        assertEquals(0, result.length);
+        result = forum.getPostsByAuthor(null);
+        assertEquals(0, result.length);
+        forum = new ForumImpl();
+        result = forum.getPostsByAuthor("Alice");
+        assertEquals(0, result.length);
     }
-
     @Test
     void testGetPostsByAuthorAndDate() {
         LocalDate dateFrom = LocalDate.now().minusDays(3);

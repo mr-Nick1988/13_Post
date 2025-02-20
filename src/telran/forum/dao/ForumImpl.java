@@ -8,11 +8,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 
 public class ForumImpl implements Forum {
-
-    private final Comparator<Post> comparator = (p1, p2) -> {
-        int res = p1.getAuthor().compareTo(p2.getAuthor());
-        return res != 0 ? res : Integer.compare(p1.getPostId(), p2.getPostId());
-    };
+    private final Comparator<Post> comparator = (p1, p2) -> p1.getAuthor().compareTo(p2.getAuthor());
     private Post[] posts;
     private int size;
 
@@ -29,11 +25,8 @@ public class ForumImpl implements Forum {
         if (size == posts.length) {
             posts = Arrays.copyOf(posts, posts.length + 10);
         }
-        int index = Arrays.binarySearch(posts, 0, size, post, comparator);
-        index = index >= 0 ? index : -index - 1;
-        System.arraycopy(posts, index, posts, index + 1, size - index);
-        posts[index] = post;
-        size++;
+        posts[size++] = post;
+        Arrays.sort(posts, 0, size, comparator);
         return true;
     }
 
@@ -47,7 +40,6 @@ public class ForumImpl implements Forum {
         posts[--size] = null;
         Arrays.sort(posts, 0, size, comparator);
         return true;
-
     }
 
     @Override
@@ -66,10 +58,27 @@ public class ForumImpl implements Forum {
         return index == -1 ? null : posts[index];
     }
 
+
     @Override
     public Post[] getPostsByAuthor(String author) {
-        return getFilteredPosts(author, null, null);
+        if (size == 0 || author == null) return new Post[0];
+        Post searchPost = new Post(0, "", author, null);
+        Arrays.sort(posts, 0, size, comparator);
+        int index = Arrays.binarySearch(posts, 0, size, searchPost, comparator);
+        if (index < 0) {
+            return new Post[0];
+        }
+        int left = index;
+        while (left > 0 && posts[left - 1].getAuthor().equals(author)) {
+            left--;
+        }
+        int right = index;
+        while (right < size - 1 && posts[right + 1].getAuthor().equals(author)) {
+            right++;
+        }
+        return Arrays.copyOfRange(posts, left, right + 1);
     }
+
 
     @Override
     public Post[] getPostsByAuthor(String author, LocalDate dateFrom, LocalDate dateTo) {
@@ -98,7 +107,6 @@ public class ForumImpl implements Forum {
                 boolean matchesAuthor = posts[i].getAuthor().equals(author);
                 LocalDateTime postDateTime = posts[i].getDate();
                 boolean matchesDate = false;
-
                 if (postDateTime != null) {
                     LocalDate postDate = postDateTime.toLocalDate();
                     matchesDate = (dateFrom == null || !postDate.isBefore(dateFrom)) &&
