@@ -1,7 +1,6 @@
 package telran.forum.dao;
 
 import telran.forum.model.Post;
-
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -19,14 +18,19 @@ public class ForumImpl implements Forum {
 
     @Override
     public boolean addPost(Post post) {
-        if (post == null || size == posts.length || getPostById(post.getPostId()) != null) {
+        if (post == null || getPostById(post.getPostId()) != null) {
             return false;
         }
         if (size == posts.length) {
             posts = Arrays.copyOf(posts, posts.length + 10);
         }
-        posts[size++] = post;
-        Arrays.sort(posts, 0, size, comparator);
+        int postPosition = Arrays.binarySearch(posts, 0, size, post, comparator);
+        if (postPosition < 0) {
+            postPosition = -postPosition - 1;
+        }
+        System.arraycopy(posts, postPosition, posts, postPosition + 1, size - postPosition);
+        posts[postPosition] = post;
+        size++;
         return true;
     }
 
@@ -36,9 +40,9 @@ public class ForumImpl implements Forum {
         if (index == -1) {
             return false;
         }
+
         System.arraycopy(posts, index + 1, posts, index, size - index - 1);
         posts[--size] = null;
-        Arrays.sort(posts, 0, size, comparator);
         return true;
     }
 
@@ -58,12 +62,10 @@ public class ForumImpl implements Forum {
         return index == -1 ? null : posts[index];
     }
 
-
     @Override
     public Post[] getPostsByAuthor(String author) {
         if (size == 0 || author == null) return new Post[0];
         Post searchPost = new Post(0, "", author, null);
-        Arrays.sort(posts, 0, size, comparator);
         int index = Arrays.binarySearch(posts, 0, size, searchPost, comparator);
         if (index < 0) {
             return new Post[0];
@@ -78,7 +80,6 @@ public class ForumImpl implements Forum {
         }
         return Arrays.copyOfRange(posts, left, right + 1);
     }
-
 
     @Override
     public Post[] getPostsByAuthor(String author, LocalDate dateFrom, LocalDate dateTo) {
